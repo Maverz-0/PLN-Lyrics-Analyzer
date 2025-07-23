@@ -307,7 +307,7 @@
       });
 
       const data = await response.json();
-      console.log("🎵 Preview URL:", data.preview);
+      console.log("🎵 Preview URL:", data.preview_url);
 
       if (data.imagen) {
         fondo.classList.remove("active");
@@ -336,8 +336,8 @@
         document.getElementById('toggleLetra').style.display = "inline-block";
 
         // 🎧 Audio preview
-        if (data.preview) {
-          audio.src = data.preview;
+        if (data.preview_url) {
+          audio.src = data.preview_url;
           audio.load();
 
           try {
