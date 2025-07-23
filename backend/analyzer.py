@@ -17,5 +17,3 @@ def porcentaje_adjetivos(texto):
         "adjetivos": adjetivos,
         "total": total_palabras
     }
-
-d
