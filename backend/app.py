@@ -1,8 +1,9 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from genius import buscar_canciones, obtener_letra_desde_url
-from analyzer import porcentaje_adjetivos
-from spotify import obtener_preview_url
+from .genius import buscar_canciones, obtener_letra_desde_url
+from .analyzer import porcentaje_adjetivos
+from .spotify import obtener_preview_url
+
 
 app = Flask(__name__)
 
