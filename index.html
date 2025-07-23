@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Analizador de Letras</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+      background-color: #1c1c2e;
+    }
+
+    #fondo-wrapper {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    #fondo-blur {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-size: cover;
+      background-position: center;
+      filter: blur(8px);
+      opacity: 0;
+      transform: scale(1.03);
+      transition: opacity 2s ease-in-out, transform 2s ease-in-out;
+      z-index: 0;
+    }
+
+    #fondo-blur.active {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    #fondo-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1;
+    }
+
+    .layout {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+      z-index: 2;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      padding: 40px;
+      color: #fff;
+      backdrop-filter: blur(12px) saturate(120%);
+      background-color: rgba(30, 30, 40, 0.6);
+      border-radius: 16px;
+      position: absolute;
+      top: 25%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      transition: all 1s ease-in-out;
+    }
+
+    .container.fijado {
+      top: 0;
+      left: 0;
+      transform: none;
+      height: 100%;
+      border-radius: 0;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 28px;
+      color: #fcd34d;
+      margin-bottom: 30px;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-bottom: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    button {
+      padding: 12px;
+      background-color: #fcd34d;
+      color: #000;
+      border: none;
+      font-weight: bold;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #fde68a;
+    }
+
+    .boton-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid #fcd34d;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #resultado {
+      font-size: 26px;
+      font-weight: bold;
+      color: #fcd34d;
+      margin-top: 30px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 1s ease-in-out;
+    }
+
+    #resultado.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .letra-wrapper {
+      flex: 1;
+      display: none;
+      overflow: hidden;
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 600px;
+      z-index: 2;
+    }
+
+    .letra-wrapper.mostrar {
+      display: block;
+    }
+
+    .degradado-letra {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(to left, rgba(15, 15, 25, 0.9), transparent);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .letra {
+      height: 100%;
+      overflow-y: auto;
+      padding: 60px 60px 60px 20px;
+      font-size: 44px;
+      color: #fff;
+      line-height: 1.8;
+      text-align: right;
+      position: relative;
+      z-index: 2;
+      opacity: 0;
+      transform: translateX(80px);
+      transition: opacity 1.2s ease-in-out, transform 1.2s ease-in-out;
+    }
+
+    .letra.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    #toggleLetra, #toggleAudio {
+      background-color: transparent;
+      color: #fff;
+      font-size: 14px;
+      text-decoration: underline;
+      border: none;
+      cursor: pointer;
+    }
+
+    #toggleAudio {
+      color: #93c5fd;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="fondo-wrapper">
+    <div id="fondo-blur"></div>
+    <div id="fondo-overlay"></div>
+  </div>
+
+  <div class="layout">
+    <div class="container" id="formulario">
+      <h1>Analiza una canción</h1>
+
+      <label for="tipo">Tipo de análisis:</label>
+      <select id="tipo">
+        <option value="porcentaje_adjetivos">Porcentaje de adjetivos</option>
+      </select>
+
+      <label for="cancion">Canción:</label>
+      <input type="text" id="cancion" list="sugerencias" oninput="cargarSugerencias()" onchange="autocompletarArtista()" />
+      <datalist id="sugerencias"></datalist>
+
+      <label for="artista">Artista:</label>
+      <input type="text" id="artista" />
+
+      <div class="boton-container">
+        <button onclick="analizar()" id="boton-analizar">Analizar</button>
+        <div id="spinner" class="spinner" style="display: none;"></div>
+        <button id="toggleLetra" style="display:none;" onclick="toggleLetra()">Ocultar letra</button>
+        <button id="toggleAudio" style="display:none;" onclick="toggleAudio()">Detener audio</button>
+      </div>
+
+      <div id="resultado"></div>
+    </div>
+
+    <div class="letra-wrapper" id="letra-wrapper">
+      <div class="degradado-letra"></div>
+      <div class="letra" id="letra"></div>
+    </div>
+  </div>
+
+  <audio id="audioPreview" controls style="position: absolute; bottom: 10px; left: 10px; z-index: 10;"></audio>
+
+<script>
+  let letraVisible = true;
+  let audio = document.getElementById("audioPreview");
+
+  function toggleLetra() {
+    letraVisible = !letraVisible;
+    const letra = document.getElementById("letra");
+    const toggleBtn = document.getElementById("toggleLetra");
+    toggleBtn.innerText = letraVisible ? "Ocultar letra" : "Mostrar letra";
+    letra.classList.toggle("visible", letraVisible);
+  }
+
+  function toggleAudio() {
+    if (!audio.src) return;
+    if (audio.paused) {
+      audio.play()
+        .then(() => {
+          document.getElementById("toggleAudio").innerText = "Detener audio";
+        })
+        .catch(err => {
+          console.warn("⚠️ Error al reproducir manualmente:", err);
+        });
+    } else {
+      audio.pause();
+      document.getElementById("toggleAudio").innerText = "Reproducir audio";
+    }
+  }
+
+  async function analizar() {
+    const artista = document.getElementById('artista').value;
+    const cancion = document.getElementById('cancion').value;
+    const tipo = document.getElementById('tipo').value;
+
+    const spinner = document.getElementById('spinner');
+    const boton = document.getElementById('boton-analizar');
+    const fondo = document.getElementById("fondo-blur");
+    const resultado = document.getElementById('resultado');
+
+    spinner.style.display = "inline-block";
+    boton.disabled = true;
+    resultado.classList.remove("visible");
+
+    try {
+      const response = await fetch('http://127.0.0.1:5001/analizar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artista, cancion, tipo })
+      });
+
+      const data = await response.json();
+      console.log("🎵 Preview URL:", data.preview);
+
+      if (data.imagen) {
+        fondo.classList.remove("active");
+        setTimeout(() => {
+          fondo.style.backgroundImage = `url('${data.imagen}')`;
+          fondo.classList.add("active");
+        }, 100);
+      }
+
+      if (data.error) {
+        resultado.innerText = "❌ Error: " + data.error;
+      } else {
+        resultado.innerText = `🎯 Porcentaje de adjetivos: ${data.resultado.porcentaje}%`;
+        resultado.classList.add("visible");
+
+        const letra = document.getElementById('letra');
+        letra.classList.remove("visible");
+
+        setTimeout(() => {
+          letra.innerText = data.letra;
+          letra.classList.add("visible");
+        }, 200);
+
+        document.getElementById('formulario').classList.add('fijado');
+        document.getElementById('letra-wrapper').classList.add('mostrar');
+        document.getElementById('toggleLetra').style.display = "inline-block";
+
+        // 🎧 Audio preview
+        if (data.preview) {
+          audio.src = data.preview;
+          audio.load();
+
+          try {
+            await audio.play();
+            document.getElementById('toggleAudio').innerText = "Detener audio";
+          } catch (err) {
+            console.warn("⚠️ Autoplay bloqueado:", err);
+            document.getElementById("toggleAudio").innerText = "Reproducir audio";
+          }
+
+          document.getElementById('toggleAudio').style.display = "inline-block";
+        } else {
+          audio.pause();
+          audio.src = "";
+          document.getElementById('toggleAudio').style.display = "none";
+        }
+
+        letraVisible = true;
+      }
+    } catch (error) {
+      resultado.innerText = "❌ Error de conexión con el servidor.";
+      resultado.classList.add("visible");
+      console.error(error);
+    } finally {
+      spinner.style.display = "none";
+      boton.disabled = false;
+    }
+  }
+
+  async function cargarSugerencias() {
+    const query = document.getElementById("cancion").value;
+    if (query.length < 2) return;
+
+    try {
+      const response = await fetch(`http://127.0.0.1:5001/sugerencias?q=${encodeURIComponent(query)}`);
+      const sugerencias = await response.json();
+
+      const datalist = document.getElementById("sugerencias");
+      datalist.innerHTML = "";
+
+      sugerencias.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item.titulo;
+        option.setAttribute("data-artista", item.artista);
+        datalist.appendChild(option);
+      });
+    } catch (e) {
+      console.error("Error al cargar sugerencias:", e);
+    }
+  }
+
+  function autocompletarArtista() {
+    const cancion = document.getElementById("cancion").value;
+    const opciones = document.querySelectorAll("#sugerencias option");
+
+    for (let opcion of opciones) {
+      if (opcion.value.toLowerCase() === cancion.toLowerCase()) {
+        document.getElementById("artista").value = opcion.getAttribute("data-artista");
+        break;
+      }
+    }
+  }
+</script>
+
+</body>
+</html>
