@@ -9,8 +9,8 @@ beautifulsoup4==4.12.3
 regex==2024.9.11
 spotipy==2.25.1
 
-# SpaCy (instalado como binario)
-spacy==3.7.5 --only-binary :all:
+# SpaCy (versión compatible con Python 3.13)
+spacy==3.8.7 --only-binary :all:
 
-# Modelo de lenguaje en español para SpaCy
-https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.7.0/es_core_news_sm-3.7.0-py3-none-any.whl
+# Modelo en español para spaCy 3.8.x
+https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl
