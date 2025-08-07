@@ -300,7 +300,7 @@
     resultado.classList.remove("visible");
 
     try {
-      const response = await fetch('http://localhost:5001/analizar', {
+      const response = await fetch('/analizar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ artista, cancion, tipo })
@@ -372,7 +372,7 @@
     if (query.length < 2) return;
 
     try {
-      const response = await fetch(`http://localhost:5001/sugerencias?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`/sugerencias?q=${encodeURIComponent(query)}`);
       const sugerencias = await response.json();
 
       const datalist = document.getElementById("sugerencias");

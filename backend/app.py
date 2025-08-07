@@ -1,14 +1,12 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+import os
+
 from genius import buscar_canciones, obtener_letra_desde_url
 from analyzer import porcentaje_adjetivos
 from spotify import obtener_preview_url
 
-
-
-app = Flask(__name__)
-
-# CORS: permitir todos los orígenes durante desarrollo (ajusta en producción)
+app = Flask(__name__, static_folder='static')
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/analizar', methods=['POST'])
@@ -46,6 +44,7 @@ def analizar():
         "preview_url": preview_url
     })
 
+
 @app.route('/sugerencias', methods=['GET'])
 def sugerencias():
     query = request.args.get('q', '')
@@ -55,9 +54,17 @@ def sugerencias():
     resultados = buscar_canciones(query, max_results=5)
     return jsonify(resultados)
 
+
 @app.route('/ping', methods=['GET'])
 def ping():
     return jsonify({"status": "ok"})
+
+
+@app.route('/')
+def index():
+    # Servir index.html desde la carpeta static
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'index.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5001)
