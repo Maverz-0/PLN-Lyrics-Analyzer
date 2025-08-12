@@ -4,9 +4,19 @@
   <meta charset="UTF-8" />
   <title>Analizador de Letras</title>
   <style>
-    * {
-      box-sizing: border-box;
+    :root{
+      /* Tokens base (se recalculan al detectar la carátula) */
+      --primary: #fcd34d;          /* color principal de UI (fondos de botones, labels, etc.) */
+      --primary-fg: #fcd34d;       /* color para TEXTO destacado sobre fondo oscuro */
+      --on-primary: #000000;       /* color de texto sobre --primary */
+      --primary-strong: #f59e0b;   /* variante para gradientes/barras */
+      --primary-soft: #fde68a;
+      --scrollbar-start: #2e3350;
+      --scrollbar-end: #3b3f66;
+      --bg-app: #1c1c2e;           /* fondo principal (constante en esta maqueta) */
     }
+
+    * { box-sizing: border-box; }
 
     html, body {
       margin: 0;
@@ -14,47 +24,20 @@
       height: 100vh;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       overflow: hidden;
-      background-color: #1c1c2e;
+      background-color: var(--bg-app);
     }
 
-    #fondo-wrapper {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      z-index: 0;
-      overflow: hidden;
-    }
-
+    #fondo-wrapper { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
     #fondo-blur {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-size: cover;
-      background-position: center;
-      filter: blur(8px);
-      opacity: 0;
-      transform: scale(1.03);
-      transition: opacity 2s ease-in-out, transform 2s ease-in-out;
-      z-index: 0;
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center;
+      filter: blur(8px); opacity: 0; transform: scale(1.03);
+      transition: opacity 2s ease-in-out, transform 2s ease-in-out; z-index: 0;
     }
+    #fondo-blur.active { opacity: 1; transform: scale(1); }
+    #fondo-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 1; }
 
-    #fondo-blur.active {
-      opacity: 1;
-      transform: scale(1);
-    }
-
-    #fondo-overlay {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 1;
-    }
-
-    .layout {
-      display: flex;
-      height: 100vh;
-      width: 100vw;
-      position: relative;
-      z-index: 2;
-    }
+    .layout { display: flex; height: 100vh; width: 100vw; position: relative; z-index: 2; }
 
     .container {
       width: 100%;
@@ -69,151 +52,244 @@
       left: 50%;
       transform: translate(-50%, -50%);
       transition: all 1s ease-in-out;
+      display: flex;
+      flex-direction: column;
     }
+    .container.fijado { top: 0; left: 0; transform: none; height: 100%; border-radius: 0; }
 
-    .container.fijado {
-      top: 0;
-      left: 0;
-      transform: none;
-      height: 100%;
-      border-radius: 0;
-    }
+    h1 { text-align: center; font-size: 28px; color: var(--primary-fg); margin-bottom: 30px; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
 
-    h1 {
-      text-align: center;
-      font-size: 28px;
-      color: #fcd34d;
-      margin-bottom: 30px;
-    }
-
-    label {
-      display: block;
-      margin: 10px 0 5px;
-      font-weight: bold;
-    }
+    label { display: block; margin: 10px 0 5px; font-weight: bold; }
 
     input, select {
       width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      margin-bottom: 15px;
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
+      padding: 9px 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 12px;
+      font-size: 15px;
+      margin-bottom: 12px;
+      background: rgba(255, 255, 255, 0.10);
+      color: #e5e7eb;
+      outline: none;
     }
+    input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent); }
+
+    /* Mejor legibilidad del desplegable */
+    select { appearance: none; background-image: linear-gradient(180deg,transparent,transparent); }
+    select option { background: #262b45; color: #e5e7eb; }
+
+    .select-row { display: flex; align-items: center; gap: 8px; }
+
+    .info-btn {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(147,197,253,0.35);
+      background: rgba(147,197,253,0.12);
+      color: #bfdbfe;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .15s ease, background .2s ease, border-color .2s ease;
+    }
+    .info-btn:hover { transform: translateY(-1px); background: rgba(147,197,253,0.2); border-color: rgba(147,197,253,0.55); }
 
     button {
       padding: 12px;
-      background-color: #fcd34d;
-      color: #000;
+      background-color: var(--primary);
+      color: var(--on-primary);
       border: none;
       font-weight: bold;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 16px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      transition: background-color 0.3s ease, transform .06s ease;
     }
-
-    button:hover {
-      background-color: #fde68a;
-    }
+    button:hover { background-color: var(--primary-soft); }
+    button:active { transform: translateY(1px); }
 
     .boton-container {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px;
     }
 
     .spinner {
-      border: 4px solid rgba(255, 255, 255, 0.3);
-      border-top: 4px solid #fcd34d;
+      border: 4px solid rgba(255, 255, 255, 0.28);
+      border-top: 4px solid var(--primary);
       border-radius: 50%;
-      width: 20px;
-      height: 20px;
+      width: 20px; height: 20px;
       animation: spin 0.8s linear infinite;
     }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    #resultado {
-      font-size: 26px;
-      font-weight: bold;
-      color: #fcd34d;
-      margin-top: 30px;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: all 1s ease-in-out;
-    }
-
-    #resultado.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
+    /* Letras (derecha) */
     .letra-wrapper {
-      flex: 1;
-      display: none;
-      overflow: hidden;
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 600px;
-      z-index: 2;
+      flex: 1; display: none; overflow: hidden;
+      position: absolute; top: 0; right: 0; bottom: 0; left: 600px; z-index: 2;
     }
-
-    .letra-wrapper.mostrar {
-      display: block;
-    }
+    .letra-wrapper.mostrar { display: block; }
 
     .degradado-letra {
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 50%;
-      height: 100%;
+      position: absolute; top: 0; right: 0; width: 50%; height: 100%;
       background: linear-gradient(to left, rgba(15, 15, 25, 0.9), transparent);
-      pointer-events: none;
-      z-index: 1;
+      pointer-events: none; z-index: 1;
     }
 
     .letra {
       height: 100%;
       overflow-y: auto;
       padding: 60px 60px 60px 20px;
-      font-size: 44px;
-      color: #fff;
-      line-height: 1.8;
-      text-align: right;
-      position: relative;
-      z-index: 2;
-      opacity: 0;
-      transform: translateX(80px);
+      font-size: 44px; color: #fff; line-height: 1.8; text-align: right;
+      position: relative; z-index: 2; opacity: 0; transform: translateX(80px);
       transition: opacity 1.2s ease-in-out, transform 1.2s ease-in-out;
     }
+    .letra.visible { opacity: 1; transform: translateX(0); }
 
-    .letra.visible {
-      opacity: 1;
-      transform: translateX(0);
+    #toggleLetra {
+      background-color: transparent; color: #fff; font-size: 14px;
+      text-decoration: underline; border: none; cursor: pointer;
     }
 
-    #toggleLetra, #toggleAudio {
-      background-color: transparent;
-      color: #fff;
-      font-size: 14px;
-      text-decoration: underline;
-      border: none;
-      cursor: pointer;
+    /* === Scrollbars bonitos (resultados + letras + info) === */
+    .scrollable { scrollbar-width: thin; scrollbar-color: var(--scrollbar-end) rgba(255,255,255,0.06); }
+    .scrollable::-webkit-scrollbar { width: 10px; }
+    .scrollable::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.06); border-radius: 999px;
+    }
+    .scrollable::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg,var(--scrollbar-start),var(--scrollbar-end));
+      border-radius: 999px; border: 2px solid rgba(0,0,0,0.2);
     }
 
-    #toggleAudio {
-      color: #93c5fd;
+    /* === RESULT PANEL UI === */
+    .result-panel{
+      margin-top: 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      flex: 1; min-height: 0; overflow-y: auto;
     }
+    .result-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+    .result-title{ font-size:18px; font-weight:700; color:#f8fafc; }
+    .badges{ display:flex; gap:8px; flex-wrap:wrap; }
+    .idioma-badge{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 8px; border-radius:999px;
+      background: rgba(147,197,253,0.15); color:#bfdbfe;
+      font-size:12px; font-weight:600; border:1px solid rgba(147,197,253,0.35);
+    }
+    .idioma-badge b { text-transform: uppercase; } /* solo el código en mayúscula */
+    .flag {
+      display:inline-block; width:18px; height:12px; background-size:cover; background-position:center;
+      border-radius:2px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
+      vertical-align:-2px;
+    }
+    .result-grid{ display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media (min-width: 620px){ .result-grid{ grid-template-columns: 1fr 1fr; } }
+
+    .stat-card{
+      background: rgba(0,0,0,0.25);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:12px; padding:14px;
+    }
+    .stat-card h3{ font-size:14px; color:#e5e7eb; font-weight:600; margin:0 0 6px 0; }
+
+    /* Números destacados: ahora usan --primary-fg (texto accesible en fondo oscuro)
+       + micro-fondo para mejorar legibilidad en carátulas brillantes */
+    .stat-value{
+      font-size:26px; font-weight:800; color: var(--primary-fg); letter-spacing:0.5px;
+      text-shadow: 0 1px 2px rgba(0,0,0,.35);
+      display:inline-block; padding: 2px 6px; border-radius: 8px;
+      background: color-mix(in srgb, var(--bg-app) 30%, transparent);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .subtext{ font-size:12px; color:#cbd5e1; margin-top:4px; }
+
+    .progress{
+      height:8px; width:100%;
+      background: rgba(255,255,255,0.1);
+      border-radius:999px; overflow:hidden; margin-top:8px;
+    }
+    .progress > span{
+      display:block; height:100%; width:0%;
+      background: linear-gradient(90deg,var(--primary-soft),var(--primary-strong));
+    }
+
+    .stackbar{ display:flex; height:10px; border-radius:999px; overflow:hidden; margin-top:8px; background: rgba(255,255,255,0.1); }
+    .stackbar span{ display:block; height:100%; }
+    .stack-1{ background:#60a5fa; } .stack-2{ background:#34d399; } .stack-3{ background:#f472b6; } .stack-otros{ background:#a3a3a3; }
+    .legend{ display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; }
+    .legend .dot{ width:10px; height:10px; border-radius:999px; display:inline-block; margin-right:6px; }
+    .legend small{ color:#cbd5e1; }
+
+    .chips{ display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+    .chip{ padding:6px 10px; border-radius:999px; background: rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:#e5e7eb; font-size:12px; font-weight:600; }
+
+    .table-min{ width:100%; margin-top:8px; border-collapse:collapse; font-size:13px; color:#e5e7eb; }
+    .table-min th, .table-min td{ padding:6px 8px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left; }
+    .table-min th{ color:#cbd5e1; font-weight:600; }
+
+    .rhyme-scheme{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+    .label{
+      padding:4px 8px; border-radius:8px; font-size:12px; font-weight:700;
+      background: var(--primary); color: var(--on-primary);
+      text-shadow: 0 1px 1px rgba(0,0,0,.25);
+    }
+    .label.muted{ background:#334155; color:#cbd5e1; text-shadow:none; }
+
+    .quote{
+      margin-top:8px; padding:10px 12px; border-left:3px solid #94a3b8;
+      background: rgba(255,255,255,0.06); border-radius:8px; color:#e5e7eb; font-size:14px;
+    }
+
+    /* Alternativas de estribillo (estilo diferenciado) */
+    .alt-list{ margin-top:10px; display:grid; gap:8px; }
+    .alt-item{ border:1px dashed rgba(96,165,250,0.35); background: rgba(30,58,138,0.15); border-radius:10px; padding:10px 12px; }
+    .alt-item h4{ margin:0 0 6px 0; font-size:12px; color:#93c5fd; }
+
+    /* === Info overlay (animado) === */
+    .info-overlay{
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(8,11,20,0.55); backdrop-filter: blur(6px);
+      z-index: 30; opacity: 0; visibility: hidden;
+      transition: opacity .25s ease, visibility 0s linear .25s;
+    }
+    .info-overlay.open{
+      opacity: 1; visibility: visible; transition: opacity .25s ease;
+    }
+    .info-sheet{
+      width: min(560px, 92%); max-height: 80%;
+      background: rgba(17, 24, 39, 0.92);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px; padding: 0;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      overflow: hidden; transform: translateY(10px); opacity: 0;
+      transition: transform .3s ease, opacity .3s ease;
+      display: flex; flex-direction: column;
+    }
+    .info-overlay.open .info-sheet{ transform: translateY(0); opacity: 1; }
+
+    .info-header{
+      position: sticky; top: 0; z-index: 1;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px;
+      background: linear-gradient(180deg, rgba(31,41,55,0.95), rgba(31,41,55,0.85));
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .info-header h2 { margin: 0; color: #f8fafc; font-size: 18px; }
+    .info-close{
+      padding: 6px 10px; border-radius: 10px; cursor:pointer;
+      background: rgba(255,255,255,0.08); color:#e5e7eb; border:1px solid rgba(255,255,255,0.12);
+      transition: background .2s ease;
+    }
+    .info-close:hover{ background: rgba(255,255,255,0.12); }
+
+    .info-body{ padding: 14px; overflow-y: auto; }
+    .info-body p, .info-body li { color:#cbd5e1; font-size: 14px; line-height: 1.6; }
+    .info-list{ display: grid; gap: 10px; margin-top: 8px; }
+    .info-card{ background: rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; }
+    .info-card h3{ margin:0 0 6px 0; font-size: 15px; color:#e5e7eb; }
   </style>
 </head>
 
@@ -228,9 +304,21 @@
       <h1>Analiza una canción</h1>
 
       <label for="tipo">Tipo de análisis:</label>
-      <select id="tipo">
-        <option value="porcentaje_adjetivos">Porcentaje de adjetivos</option>
-      </select>
+      <div class="select-row">
+        <select id="tipo">
+          <option value="porcentaje_adjetivos">Porcentaje de adjetivos</option>
+          <option value="sentimiento">Sentimiento (−1 a 1)</option>
+          <option value="riqueza_lexica">Riqueza léxica (TTR)</option>
+          <option value="frecuencia_pronombres">Frecuencia de pronombres</option>
+          <option value="deteccion_rimas">Detección de rimas</option>
+          <option value="repeticion_versos">Repetición de versos</option>
+          <option value="palabras_mas_frecuentes">Palabras más frecuentes</option>
+          <option value="deteccion_temas">Detección de temas</option>
+          <option value="deteccion_metaforas">Detección de metáforas</option>
+          <option value="reconocimiento_entidades">Reconocimiento de entidades</option>
+        </select>
+        <button class="info-btn" id="btnInfo" title="Información sobre los análisis" onclick="openInfo()">?</button>
+      </div>
 
       <label for="cancion">Canción:</label>
       <input type="text" id="cancion" list="sugerencias" oninput="cargarSugerencias()" onchange="autocompletarArtista()" />
@@ -243,23 +331,52 @@
         <button onclick="analizar()" id="boton-analizar">Analizar</button>
         <div id="spinner" class="spinner" style="display: none;"></div>
         <button id="toggleLetra" style="display:none;" onclick="toggleLetra()">Ocultar letra</button>
-        <button id="toggleAudio" style="display:none;" onclick="toggleAudio()">Detener audio</button>
       </div>
 
-      <div id="resultado"></div>
+      <!-- Panel de resultados -->
+      <div id="resultPanel" class="result-panel scrollable" style="display:none;">
+        <div class="result-header">
+          <div class="result-title" id="resultTitle">Resultado</div>
+          <div class="badges">
+            <span id="idiomaBadge" class="idioma-badge" style="display:none;"></span>
+          </div>
+        </div>
+        <div class="result-grid" id="resultGrid"></div>
+        <div id="resultDetails"></div>
+      </div>
+
+      <!-- Info overlay (animado) -->
+      <div id="infoOverlay" class="info-overlay" aria-hidden="true">
+        <div class="info-sheet">
+          <div class="info-header">
+            <h2>¿Qué hace cada análisis?</h2>
+            <button class="info-close" onclick="closeInfo()" aria-label="Cerrar">Cerrar ✕</button>
+          </div>
+          <div class="info-body scrollable">
+            <div class="info-list">
+              <div class="info-card"><h3>Porcentaje de adjetivos</h3><p>Mide la proporción de adjetivos respecto al total de palabras. Útil para ver cuán descriptiva es la letra.</p></div>
+              <div class="info-card"><h3>Riqueza léxica (TTR)</h3><p>Relación entre tipos únicos y tokens totales (con lematización y sin stopwords). Más alto ⇒ vocabulario más variado.</p></div>
+              <div class="info-card"><h3>Frecuencia de pronombres</h3><p>Distribución de pronombres en 1ª, 2ª y 3ª persona (opcionalmente posesivos). Indica el foco narrativo.</p></div>
+              <div class="info-card"><h3>Detección de rimas</h3><p>Analiza las últimas palabras de cada verso para detectar rima consonante/asonante y mostrar el esquema de rima.</p></div>
+              <div class="info-card"><h3>Repetición de versos</h3><p>Agrupa versos iguales o muy similares; sugiere un estribillo probable y otras alternativas.</p></div>
+              <div class="info-card"><h3>Palabras más frecuentes</h3><p>Muestra el top de palabras (ignorando stopwords y variantes flexivas) para intuir los conceptos clave.</p></div>
+              <div class="info-card"><h3>Detección de temas</h3><p>Clasifica la letra en temas (amor, protesta, fiesta, etc.) con un modelo zero-shot (o fallback por palabras clave).</p></div>
+              <div class="info-card"><h3>Detección de metáforas</h3><p>Heurísticos para símiles (como/like) y patrones nominales (“corazón de piedra”).</p></div>
+              <div class="info-card"><h3>Reconocimiento de entidades</h3><p>Detecta nombres propios (personas, lugares, organizaciones, etc.) y los agrupa por tipo.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="letra-wrapper" id="letra-wrapper">
       <div class="degradado-letra"></div>
-      <div class="letra" id="letra"></div>
+      <div class="letra scrollable" id="letra"></div>
     </div>
   </div>
 
-  <audio id="audioPreview" controls style="position: absolute; bottom: 10px; left: 10px; z-index: 10;"></audio>
-
 <script>
   let letraVisible = true;
-  let audio = document.getElementById("audioPreview");
 
   function toggleLetra() {
     letraVisible = !letraVisible;
@@ -269,19 +386,453 @@
     letra.classList.toggle("visible", letraVisible);
   }
 
-  function toggleAudio() {
-    if (!audio.src) return;
-    if (audio.paused) {
-      audio.play()
-        .then(() => {
-          document.getElementById("toggleAudio").innerText = "Detener audio";
-        })
-        .catch(err => {
-          console.warn("⚠️ Error al reproducir manualmente:", err);
-        });
+  // ===== Info overlay (animado) =====
+  const infoOverlay = document.getElementById('infoOverlay');
+  function openInfo(){
+    infoOverlay.classList.add('open');
+    infoOverlay.setAttribute('aria-hidden','false');
+    document.addEventListener('keydown', escHandler);
+  }
+  function closeInfo(){
+    infoOverlay.classList.remove('open');
+    infoOverlay.setAttribute('aria-hidden','true');
+    document.removeEventListener('keydown', escHandler);
+  }
+  function escHandler(e){ if (e.key === 'Escape') closeInfo(); }
+  infoOverlay.addEventListener('click', (e)=>{ if (e.target === infoOverlay) closeInfo(); });
+
+  // ===== Result panel helpers =====
+  function showPanel() { document.getElementById('resultPanel').style.display = 'block'; }
+
+  // Flags como SVG embebido (para que no dependan del soporte de emojis)
+  function flagDataUrl(lang){
+    switch((lang||'').toLowerCase()){
+      case 'es': case 'ca': case 'gl': case 'eu':
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="48"><rect width="64" height="48" fill="#AA151B"/><rect y="16" width="64" height="16" fill="#F1BF00"/></svg>');
+      case 'en':
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="48"><rect width="64" height="48" fill="#B22234"/><g fill="#fff"><rect y="6" width="64" height="6"/><rect y="18" width="64" height="6"/><rect y="30" width="64" height="6"/><rect y="42" width="64" height="6"/></g><rect width="28" height="20" fill="#3C3B6E"/></svg>');
+      case 'fr':
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40"><rect width="20" height="40" fill="#0055A4"/><rect x="20" width="20" height="40" fill="#fff"/><rect x="40" width="20" height="40" fill="#EF4135"/></svg>');
+      case 'pt':
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40"><rect width="24" height="40" fill="#006600"/><rect x="24" width="36" height="40" fill="#FF0000"/></svg>');
+      case 'it':
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40"><rect width="20" height="40" fill="#009246"/><rect x="20" width="20" height="40" fill="#fff"/><rect x="40" width="20" height="40" fill="#CE2B37"/></svg>');
+      case 'de':
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40"><rect width="60" height="13.33" fill="#000"/><rect y="13.33" width="60" height="13.33" fill="#DD0000"/><rect y="26.66" width="60" height="13.33" fill="#FFCE00"/></svg>');
+      default:
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40"><rect width="60" height="40" fill="#9CA3AF"/></svg>');
+    }
+  }
+  function flagSpanFor(lang){
+    const url = flagDataUrl(lang);
+    return `<span class="flag" style="background-image:url('${url}')"></span>`;
+  }
+
+  function setBadgeIdioma(data){
+    const idiomaBadge = document.getElementById('idiomaBadge');
+    if (data.idioma) {
+      const code = String(data.idioma).toUpperCase();
+      const conf = (typeof data.confianza_idioma === "number")
+        ? ` · conf. ${Math.round(data.confianza_idioma * 100)}%`
+        : "";
+      idiomaBadge.innerHTML = `${flagSpanFor(data.idioma)} <b>${code}</b>${conf}`;
+      idiomaBadge.style.display = "inline-flex";
     } else {
-      audio.pause();
-      document.getElementById("toggleAudio").innerText = "Reproducir audio";
+      idiomaBadge.style.display = "none";
+    }
+  }
+
+  function setTitle(text){ document.getElementById('resultTitle').innerText = text; }
+  function clearResults(){
+    document.getElementById('resultGrid').innerHTML = "";
+    document.getElementById('resultDetails').innerHTML = "";
+  }
+  function addCard(html){
+    const grid = document.getElementById('resultGrid');
+    const div = document.createElement('div');
+    div.className = 'stat-card';
+    div.innerHTML = html;
+    grid.appendChild(div);
+  }
+  function setDetails(html){ document.getElementById('resultDetails').innerHTML = html; }
+  function progressBar(pct){
+    const safe = Math.max(0, Math.min(100, pct));
+    return `<div class="progress"><span style="width:${safe}%;"></span></div>`;
+  }
+  function stackBar(p1,p2,p3,otros){
+    return `
+      <div class="stackbar">
+        <span class="stack-1" style="width:${p1}%;"></span>
+        <span class="stack-2" style="width:${p2}%;"></span>
+        <span class="stack-3" style="width:${p3}%;"></span>
+        <span class="stack-otros" style="width:${otros}%;"></span>
+      </div>
+    `;
+  }
+  function chips(items){
+    if (!items || !items.length) return `<div class="subtext">—</div>`;
+    return `<div class="chips">` + items.map(x => `<span class="chip">${x}</span>`).join("") + `</div>`;
+  }
+  function tableMin(headers, rows){
+    const thead = `<tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr>`;
+    const tbody = rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("");
+    return `<table class="table-min"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+  }
+  function quote(text){ return text ? `<div class="quote">“${text}”</div>` : ""; }
+  function uniqueCaseInsensitive(arr){
+    const seen = new Set(); const out = [];
+    for (const x of (arr || [])) { const k = String(x||'').toLowerCase(); if (!seen.has(k)) { seen.add(k); out.push(x); } }
+    return out;
+  }
+
+  // ===== Utilidades de color y contraste (WCAG) =====
+  function rgbToHex(r,g,b){ return '#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+  function hexToRgb(hex){
+    const m = String(hex).replace('#','').match(/^([0-9a-f]{6})$/i);
+    if(!m) return [252,211,77];
+    const n = parseInt(m[1],16);
+    return [(n>>16)&255,(n>>8)&255,n&255];
+  }
+  function mixRgb(a,b,t){ return [ Math.round(a[0]*(1-t)+b[0]*t), Math.round(a[1]*(1-t)+b[1]*t), Math.round(a[2]*(1-t)+b[2]*t) ]; }
+  function relLumChannel(v){ v/=255; return (v<=0.03928)? v/12.92 : Math.pow((v+0.055)/1.055,2.4); }
+  function relativeLuminance([r,g,b]){
+    const R=relLumChannel(r), G=relLumChannel(g), B=relLumChannel(b);
+    return 0.2126*R + 0.7152*G + 0.0722*B;
+  }
+  function contrastRatio(rgb1, rgb2){
+    const L1 = relativeLuminance(rgb1), L2 = relativeLuminance(rgb2);
+    const hi = Math.max(L1,L2), lo = Math.min(L1,L2);
+    return (hi + 0.05) / (lo + 0.05);
+  }
+  // Ajusta un color (fg) aclarando u oscureciendo hacia blanco/negro hasta cumplir minRatio contra bg
+  function adjustToContrast(fg, bg, minRatio=4.5){
+    const white=[255,255,255], black=[0,0,0];
+    const tryPath = (target)=>{
+      let best=fg, bestRatio=contrastRatio(fg,bg);
+      for(let t=0; t<=1.0; t+=0.02){
+        const cand = mixRgb(fg, target, t);
+        const cr = contrastRatio(cand, bg);
+        if (cr >= minRatio) return cand;
+        if (cr > bestRatio){ bestRatio = cr; best = cand; }
+      }
+      return best; // si no llega, devuelve el mejor
+    };
+    const towardWhite = tryPath(white);
+    const towardBlack = tryPath(black);
+    // elige el que mejor contraste dé
+    return (contrastRatio(towardWhite,bg) > contrastRatio(towardBlack,bg)) ? towardWhite : towardBlack;
+  }
+  // Ajusta un color de fondo para que contraste con un color de texto dado
+  function adjustBgForText(bg, text, minRatio=4.5){
+    const white=[255,255,255], black=[0,0,0];
+    const tryPath = (target)=>{
+      let best=bg, bestRatio=contrastRatio(text,bg);
+      for(let t=0; t<=1.0; t+=0.02){
+        const cand = mixRgb(bg, target, t);
+        const cr = contrastRatio(text, cand);
+        if (cr >= minRatio) return cand;
+        if (cr > bestRatio){ bestRatio = cr; best = cand; }
+      }
+      return best;
+    };
+    const toWhite = tryPath(white);
+    const toBlack = tryPath(black);
+    return (contrastRatio(text,toWhite) > contrastRatio(text,toBlack)) ? toWhite : toBlack;
+  }
+
+  function setCSSVars(vars){
+    const root = document.documentElement;
+    for (const k in vars){ root.style.setProperty(k, vars[k]); }
+  }
+
+  // Deriva una paleta accesible a partir de un color primario y el fondo de app
+  function deriveAccessiblePalette(primaryHex, bgHex){
+    const bg = hexToRgb(bgHex);
+    let primary = hexToRgb(primaryHex);
+
+    // 1) Texto destacado sobre fondo oscuro (primary-fg): ajusta el color hasta 4.5:1 vs bg
+    const primaryFgRgb = adjustToContrast(primary, bg, 4.5);
+
+    // 2) Texto sobre el botón/label (on-primary): elige negro/blanco con mejor contraste
+    const black=[0,0,0], white=[255,255,255];
+    let onPrimary = contrastRatio(primary, white) >= contrastRatio(primary, black) ? white : black;
+    // Si aún no llega a 4.5, ajusta el FONDO (primary) hasta que contraste con onPrimary
+    if (contrastRatio(onPrimary, primary) < 4.5){
+      primary = adjustBgForText(primary, onPrimary, 4.5);
+    }
+
+    // 3) Variantes para gradientes/barras
+    const primaryStrong = mixRgb(primary, [0,0,0], 0.2);  // 20% hacia negro
+    const primarySoft   = mixRgb(primary, [255,255,255], 0.15); // 15% hacia blanco
+
+    // 4) Scrollbars coherentes
+    const scrollStart = mixRgb(primary, [0,0,0], 0.45);
+    const scrollEnd   = mixRgb(primary, [0,0,0], 0.25);
+
+    return {
+      primary: rgbToHex(...primary),
+      primaryFg: rgbToHex(...primaryFgRgb),
+      onPrimary: rgbToHex(...onPrimary),
+      strong: rgbToHex(...primaryStrong),
+      soft: rgbToHex(...primarySoft),
+      scrollStart: rgbToHex(...scrollStart),
+      scrollEnd: rgbToHex(...scrollEnd),
+      primaryLum: relativeLuminance(primary)
+    };
+  }
+
+  // Ajusta overlay según luminosidad del primario (aprox. brillo de carátula)
+  function tuneOverlayAlpha(primaryLum){
+    const overlay = document.getElementById('fondo-overlay');
+    // más claro => overlay más opaco; más oscuro => menos opaco
+    let alpha = 0.5;
+    if (primaryLum > 0.7) alpha = 0.62;
+    else if (primaryLum > 0.55) alpha = 0.56;
+    else if (primaryLum > 0.4) alpha = 0.5;
+    else if (primaryLum > 0.25) alpha = 0.46;
+    else alpha = 0.42;
+    overlay.style.background = `rgba(0,0,0,${alpha})`;
+  }
+
+  // ===== Tema dinámico desde carátula (con accesibilidad) =====
+  function extractDominantColor(imgUrl){
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try{
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const w = canvas.width = 64, h = canvas.height = 64;
+          ctx.drawImage(img, 0, 0, w, h);
+          const data = ctx.getImageData(0,0,w,h).data;
+          const buckets = new Map();
+          for (let i=0;i<data.length;i+=4){
+            const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
+            if (a < 200) continue;
+            const key = ((r>>4)<<8)|((g>>4)<<4)|(b>>4);
+            buckets.set(key, (buckets.get(key)||0)+1);
+          }
+          let bestKey = 0, bestCnt = -1;
+          buckets.forEach((cnt,key)=>{ if (cnt>bestCnt){ bestCnt=cnt; bestKey=key; }});
+          const r = ((bestKey>>8)&0xF)<<4 | 0x8;
+          const g = ((bestKey>>4)&0xF)<<4 | 0x8;
+          const b = (bestKey&0xF)<<4 | 0x8;
+          resolve([r,g,b]);
+        }catch(e){ resolve(null); }
+      };
+      img.onerror = () => resolve(null);
+      img.src = imgUrl;
+    });
+  }
+
+  async function applyThemeFromImage(imgUrl){
+    const rgb = await extractDominantColor(imgUrl);
+    if (!rgb){ return; }
+    const primaryHex = rgbToHex(...rgb);
+    const bgHex = getComputedStyle(document.documentElement).getPropertyValue('--bg-app').trim() || '#1c1c2e';
+
+    const derived = deriveAccessiblePalette(primaryHex, bgHex);
+    setCSSVars({
+      '--primary': derived.primary,
+      '--primary-fg': derived.primaryFg,
+      '--on-primary': derived.onPrimary,
+      '--primary-strong': derived.strong,
+      '--primary-soft': derived.soft,
+      '--scrollbar-start': derived.scrollStart,
+      '--scrollbar-end': derived.scrollEnd,
+    });
+    tuneOverlayAlpha(derived.primaryLum);
+  }
+
+  // ===== Render por tipo de análisis =====
+  function renderAnalysis(r, data){
+    clearResults();
+    setBadgeIdioma(data);
+    showPanel();
+
+    switch (r.tipo) {
+      case "porcentaje_adjetivos":{
+        setTitle("Porcentaje de adjetivos");
+        addCard(`
+          <h3>Proporción</h3>
+          <div class="stat-value">${r.porcentaje}%</div>
+          <div class="subtext">ADJ: ${r.adjetivos} / ${r.total} tokens</div>
+          ${progressBar(r.porcentaje)}
+        `);
+        break;
+      }
+      case "sentimiento": {
+        setTitle("Sentimiento (−1 a 1)");
+        const pct = Math.round(((r.score + 1) / 2) * 100); // -1→0%, 0→50%, 1→100%
+
+        const meter = `
+          <div style="margin-top:8px;">
+            <div style="height:10px;border-radius:999px;overflow:hidden;background:linear-gradient(90deg,#ef4444,#f59e0b,#22c55e);position:relative;">
+              <div style="position:absolute;left:calc(${pct}% - 6px);top:-4px;width:12px;height:18px;border-radius:3px;background:var(--bg-app);border:2px solid var(--primary);"></div>
+            </div>
+            <div class="subtext" style="display:flex;justify-content:space-between;margin-top:4px;">
+              <span>−1</span><span>0</span><span>+1</span>
+            </div>
+          </div>
+        `;
+
+        addCard(`
+          <h3>Puntuación</h3>
+          <div class="stat-value">${r.score}</div>
+          <div class="subtext">Resumen: ${r.resumen} · Modelo: ${r.modelo || "—"}</div>
+          ${meter}
+        `);
+
+        const d = r.distribucion || {};
+        addCard(`
+          <h3>Distribución global</h3>
+          <div class="subtext">Positivo: ${d.positivo ?? 0}% · Neutral: ${d.neutral ?? 0}% · Negativo: ${d.negativo ?? 0}%</div>
+        `);
+
+        const tops = r.segmentos_top || {};
+        const pos = (tops.positivos || []).map(x => `+ ${x.texto} (${x.score})`);
+        const neg = (tops.negativos || []).map(x => `− ${x.texto} (${x.score})`);
+        if (pos.length || neg.length){
+          addCard(`<h3>Fragmentos destacados</h3>${chips(pos.slice(0,6))}${chips(neg.slice(0,6))}`);
+        }
+        break;
+      }
+
+      case "riqueza_lexica":{
+        setTitle("Riqueza léxica (TTR)");
+        addCard(`
+          <h3>Índice TTR</h3>
+          <div class="stat-value">${r.ttr}</div>
+          <div class="subtext">Tipos únicos: ${r.unicos} · Tokens: ${r.total}</div>
+          ${progressBar(Math.min(100, Math.round(r.ttr*100)))}
+        `);
+        break;
+      }
+      case "frecuencia_pronombres":{
+        setTitle("Frecuencia de pronombres");
+        const p1 = r.porcentajes["1"] || 0;
+        const p2 = r.porcentajes["2"] || 0;
+        const p3 = r.porcentajes["3"] || 0;
+        const po = r.porcentajes["otros"] || 0;
+        addCard(`
+          <h3>Distribución por persona</h3>
+          ${stackBar(p1,p2,p3,po)}
+          <div class="legend">
+            <span><span class="dot" style="background:#60a5fa"></span><small>1ª: ${p1}%</small></span>
+            <span><span class="dot" style="background:#34d399"></span><small>2ª: ${p2}%</small></span>
+            <span><span class="dot" style="background:#f472b6"></span><small>3ª: ${p3}%</small></span>
+            <span><span class="dot" style="background:#a3a3a3"></span><small>otros: ${po}%</small></span>
+          </div>
+        `);
+        if (r.ejemplos){
+          const e1 = uniqueCaseInsensitive(r.ejemplos["1"]).slice(0,4).map(x=>`1ª: ${x}`);
+          const e2 = uniqueCaseInsensitive(r.ejemplos["2"]).slice(0,4).map(x=>`2ª: ${x}`);
+          const e3 = uniqueCaseInsensitive(r.ejemplos["3"]).slice(0,4).map(x=>`3ª: ${x}`);
+          addCard(`<h3>Ejemplos</h3>${chips([...e1, ...e2, ...e3])}`);
+        }
+        break;
+      }
+      case "deteccion_rimas":{
+        setTitle("Detección de rimas");
+        addCard(`
+          <h3>Resumen</h3>
+          <div class="stat-value">${r.stats.versos_con_rima}/${r.stats.versos}</div>
+          <div class="subtext">${r.stats.porcentaje_con_rima}% de versos con rima · Grupos: ${r.stats.num_grupos}</div>
+        `);
+        const esquema = (r.esquema || []).map(x => x === "-" ? `<span class="label muted">–</span>` : `<span class="label">${x}</span>`).join("");
+        setDetails(`
+          <h3 style="margin-top:12px;color:#e5e7eb;">Esquema</h3>
+          <div class="rhyme-scheme">${esquema}</div>
+          ${r.grupos?.length ? tableMin(
+            ["Tipo","Clave","Ejemplos"],
+            r.grupos.slice(0,6).map(g => [g.tipo, g.clave, (g.ejemplos||[]).join(" / ")])
+          ) : ""}
+        `);
+        break;
+      }
+      case "repeticion_versos":{
+        setTitle("Repetición de versos");
+        addCard(`
+          <h3>Grupos detectados</h3>
+          <div class="stat-value">${r.stats.num_grupos || 0}</div>
+          <div class="subtext">Versos analizados: ${r.stats.versos}</div>
+        `);
+        const g = r.posible_estribillo;
+        let altHtml = '';
+        const otros = (r.grupos || []).slice(1);
+        if (otros.length){
+          altHtml = `
+            <div class="alt-list">
+              ${otros.slice(0,8).map((og,idx)=>`
+                <div class="alt-item">
+                  <h4>Alternativa ${idx+1} · ${og.tipo} (${og.miembros.length} repeticiones)</h4>
+                  ${quote((og.ejemplos && og.ejemplos[0]) || "")}
+                </div>
+              `).join("")}
+            </div>
+          `;
+        }
+        setDetails(`
+          <h3 style="margin-top:12px;color:#e5e7eb;">Posible estribillo</h3>
+          ${g ? quote(g.primer_linea) : '<div class="subtext">No se detectó un estribillo claro.</div>'}
+          ${altHtml}
+        `);
+        break;
+      }
+      case "palabras_mas_frecuentes":{
+        setTitle("Palabras más frecuentes");
+        const lista = (r.top||[]).slice(0,10).map(x => `${x.palabra} (${x.conteo})`);
+        addCard(`
+          <h3>Top 10</h3>
+          ${chips(lista)}
+          <div class="subtext">Tokens considerados: ${r.total_tokens_considerados || "—"}</div>
+        `);
+        break;
+      }
+      case "deteccion_temas":{
+        setTitle("Detección de temas");
+        const top = (r.top||[]).map(x => `${x.tema} (${x.score}${r.metodo==='zero_shot'?'%':''})`);
+        addCard(`
+          <h3>Principales temas ${r.metodo==='zero_shot'?'(zero-shot)':'(keywords)'}</h3>
+          ${chips(top)}
+        `);
+        break;
+      }
+      case "deteccion_metaforas":{
+        setTitle("Detección de metáforas");
+        addCard(`
+          <h3>Conteo</h3>
+          <div class="stat-value">${(r.conteos?.total)||0}</div>
+          <div class="subtext">Símiles: ${r.conteos?.similes||0} · Nominales: ${r.conteos?.metaforas_nominales||0}</div>
+        `);
+        const ejemplo = r.similes?.[0]?.linea || r.metaforas_nominales?.[0]?.linea || "";
+        setDetails(ejemplo ? `<h3 style="margin-top:12px;color:#e5e7eb;">Ejemplo</h3>${quote(ejemplo)}` : "");
+        break;
+      }
+      case "reconocimiento_entidades":{
+        setTitle("Reconocimiento de entidades");
+        addCard(`
+          <h3>Total</h3>
+          <div class="stat-value">${r.total_entidades}</div>
+          <div class="subtext">Por tipo abajo</div>
+        `);
+        const t = r.por_tipo || {};
+        const filas = [];
+        const take = (lab) => t[lab] || t[(lab||"").toUpperCase()];
+        const per = take("PERSON") || take("PER");
+        const loc = take("LOC") || take("GPE");
+        const org = take("ORG");
+        if (per) filas.push(["Personas", per.total, (per.top||[]).slice(0,3).map(x=>x.texto).join(", ")]);
+        if (loc) filas.push(["Lugares", loc.total, (loc.top||[]).slice(0,3).map(x=>x.texto).join(", ")]);
+        if (org) filas.push(["Organizaciones", org.total, (org.top||[]).slice(0,3).map(x=>x.texto).join(", ")]);
+        setDetails(filas.length ? tableMin(["Tipo","Total","Ejemplos"], filas) : `<div class="subtext">No se detectaron entidades destacables.</div>`);
+        break;
+      }
+      default:{
+        setTitle("Análisis");
+        addCard(`<h3>Resultado</h3><div class="subtext">Análisis completado.</div>`);
+      }
     }
   }
 
@@ -293,11 +844,9 @@
     const spinner = document.getElementById('spinner');
     const boton = document.getElementById('boton-analizar');
     const fondo = document.getElementById("fondo-blur");
-    const resultado = document.getElementById('resultado');
 
     spinner.style.display = "inline-block";
     boton.disabled = true;
-    resultado.classList.remove("visible");
 
     try {
       const response = await fetch('/analizar', {
@@ -307,59 +856,34 @@
       });
 
       const data = await response.json();
-      console.log("🎵 Preview URL:", data.preview_url);
 
       if (data.imagen) {
         fondo.classList.remove("active");
-        setTimeout(() => {
+        setTimeout(async () => {
           fondo.style.backgroundImage = `url('${data.imagen}')`;
           fondo.classList.add("active");
+          // deriva paleta accesible y overlay desde la carátula
+          try { await applyThemeFromImage(data.imagen); } catch(e){}
         }, 100);
       }
 
       if (data.error) {
-        resultado.innerText = "❌ Error: " + data.error;
+        showPanel(); setTitle("Error en el análisis"); setBadgeIdioma({});
+        clearResults(); addCard(`<h3>Mensaje</h3><div class="subtext">❌ ${data.error}</div>`);
       } else {
-        resultado.innerText = `🎯 Porcentaje de adjetivos: ${data.resultado.porcentaje}%`;
-        resultado.classList.add("visible");
+        renderAnalysis(data.resultado, data);
 
         const letra = document.getElementById('letra');
         letra.classList.remove("visible");
-
-        setTimeout(() => {
-          letra.innerText = data.letra;
-          letra.classList.add("visible");
-        }, 200);
+        setTimeout(() => { letra.innerText = data.letra; letra.classList.add("visible"); }, 200);
 
         document.getElementById('formulario').classList.add('fijado');
         document.getElementById('letra-wrapper').classList.add('mostrar');
         document.getElementById('toggleLetra').style.display = "inline-block";
-
-        // 🎧 Audio preview
-        if (data.preview_url) {
-          audio.src = data.preview_url;
-          audio.load();
-
-          try {
-            await audio.play();
-            document.getElementById('toggleAudio').innerText = "Detener audio";
-          } catch (err) {
-            console.warn("⚠️ Autoplay bloqueado:", err);
-            document.getElementById("toggleAudio").innerText = "Reproducir audio";
-          }
-
-          document.getElementById('toggleAudio').style.display = "inline-block";
-        } else {
-          audio.pause();
-          audio.src = "";
-          document.getElementById('toggleAudio').style.display = "none";
-        }
-
-        letraVisible = true;
       }
     } catch (error) {
-      resultado.innerText = "❌ Error de conexión con el servidor.";
-      resultado.classList.add("visible");
+      showPanel(); setTitle("Error de conexión"); setBadgeIdioma({});
+      clearResults(); addCard(`<h3>Mensaje</h3><div class="subtext">❌ Error de conexión con el servidor.</div>`);
       console.error(error);
     } finally {
       spinner.style.display = "none";
@@ -392,7 +916,6 @@
   function autocompletarArtista() {
     const cancion = document.getElementById("cancion").value;
     const opciones = document.querySelectorAll("#sugerencias option");
-
     for (let opcion of opciones) {
       if (opcion.value.toLowerCase() === cancion.toLowerCase()) {
         document.getElementById("artista").value = opcion.getAttribute("data-artista");

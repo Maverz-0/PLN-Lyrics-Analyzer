@@ -3,8 +3,15 @@ from flask_cors import CORS
 import os
 
 from genius import buscar_canciones, obtener_letra_desde_url
-from analyzer import porcentaje_adjetivos
-from spotify import obtener_preview_url
+
+from analyzer import (
+    porcentaje_adjetivos, riqueza_lexica, frecuencia_pronombres,
+    deteccion_rimas, repeticion_versos, palabras_mas_frecuentes,
+    deteccion_temas, deteccion_metaforas, reconocimiento_entidades,
+    detectar_idioma, analizar_sentimiento_pro   # <-- nuevo
+)
+
+
 
 app = Flask(__name__, static_folder='static')
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -30,19 +37,53 @@ def analizar():
     if "Letra no encontrada" in letra or not letra.strip():
         return jsonify({"error": "No se pudo obtener la letra desde Genius."})
 
+    # 🔤 Detectar idioma una vez (para UI y para los análisis que lo usan)
+    lang = detectar_idioma(letra)
+    lang_code = lang["codigo"]
+    lang_conf = lang["confianza"]
+
+    # 🧠 Selección del análisis
     if tipo_analisis == "porcentaje_adjetivos":
-        resultado = porcentaje_adjetivos(letra)
+        resultado = porcentaje_adjetivos(letra, lang_code=lang_code)
+    elif tipo_analisis == "riqueza_lexica":
+        resultado = riqueza_lexica(
+            letra,
+            usar_lemmas=True,
+            excluir_stopwords=True,
+            solo_palabras_contenido=True,
+            lang_code=lang_code
+        )
+    elif tipo_analisis == "frecuencia_pronombres":
+        resultado = frecuencia_pronombres(letra, incluir_posesivos=True, lang_code=lang_code)
+    elif tipo_analisis == "deteccion_rimas":
+        resultado = deteccion_rimas(letra, lang_code=lang_code, tail_len=3)
+    elif tipo_analisis == "repeticion_versos":
+        resultado = repeticion_versos(letra, sim_umbral=0.85, max_versos=250)
+    elif tipo_analisis == "palabras_mas_frecuentes":
+        resultado = palabras_mas_frecuentes(
+            letra, top_n=10, usar_lemmas=True, excluir_stopwords=True, min_len=2, lang_code=lang_code
+        )
+    elif tipo_analisis == "deteccion_temas":
+        resultado = deteccion_temas(letra, top_k=3, multi_label=True, lang_code=lang_code)
+    elif tipo_analisis == "deteccion_metaforas":
+        resultado = deteccion_metaforas(letra, lang_code=lang_code)
+    elif tipo_analisis == "reconocimiento_entidades":
+        resultado = reconocimiento_entidades(letra, lang_code=lang_code, top_n=8)
+    elif tipo_analisis == "sentimiento":  # <-- NUEVO
+        # Modelo multilingüe (XLM-R). No necesita lang_code, pero puedes pasarlo si quisieras loguearlo.
+        resultado = analizar_sentimiento_pro(letra)
     else:
         return jsonify({"error": "Tipo de análisis no soportado."})
-
-    preview_url = obtener_preview_url(artista, cancion)
 
     return jsonify({
         "letra": letra,
         "resultado": resultado,
         "imagen": imagen,
-        "preview_url": preview_url
+        "idioma": lang_code,
+        "confianza_idioma": lang_conf
     })
+
+
 
 
 @app.route('/sugerencias', methods=['GET'])
