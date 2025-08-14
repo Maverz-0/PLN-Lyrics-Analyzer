@@ -37,43 +37,39 @@ def analizar():
     if "Letra no encontrada" in letra or not letra.strip():
         return jsonify({"error": "No se pudo obtener la letra desde Genius."})
 
-    # 🔤 Detectar idioma una vez (para UI y para los análisis que lo usan)
+    # 🔤 Detectar idioma (para UI y algunos análisis)
     lang = detectar_idioma(letra)
     lang_code = lang["codigo"]
     lang_conf = lang["confianza"]
 
-    # 🧠 Selección del análisis
-    if tipo_analisis == "porcentaje_adjetivos":
-        resultado = porcentaje_adjetivos(letra, lang_code=lang_code)
-    elif tipo_analisis == "riqueza_lexica":
-        resultado = riqueza_lexica(
-            letra,
-            usar_lemmas=True,
-            excluir_stopwords=True,
-            solo_palabras_contenido=True,
-            lang_code=lang_code
-        )
-    elif tipo_analisis == "frecuencia_pronombres":
-        resultado = frecuencia_pronombres(letra, incluir_posesivos=True, lang_code=lang_code)
-    elif tipo_analisis == "deteccion_rimas":
-        resultado = deteccion_rimas(letra, lang_code=lang_code, tail_len=3)
-    elif tipo_analisis == "repeticion_versos":
-        resultado = repeticion_versos(letra, sim_umbral=0.85, max_versos=250)
-    elif tipo_analisis == "palabras_mas_frecuentes":
-        resultado = palabras_mas_frecuentes(
-            letra, top_n=10, usar_lemmas=True, excluir_stopwords=True, min_len=2, lang_code=lang_code
-        )
-    elif tipo_analisis == "deteccion_temas":
-        resultado = deteccion_temas(letra, top_k=3, multi_label=True, lang_code=lang_code)
-    elif tipo_analisis == "deteccion_metaforas":
-        resultado = deteccion_metaforas(letra, lang_code=lang_code)
-    elif tipo_analisis == "reconocimiento_entidades":
-        resultado = reconocimiento_entidades(letra, lang_code=lang_code, top_n=8)
-    elif tipo_analisis == "sentimiento":  # <-- NUEVO
-        # Modelo multilingüe (XLM-R). No necesita lang_code, pero puedes pasarlo si quisieras loguearlo.
-        resultado = analizar_sentimiento_pro(letra)
-    else:
-        return jsonify({"error": "Tipo de análisis no soportado."})
+    try:
+        if tipo_analisis == "porcentaje_adjetivos":
+            resultado = porcentaje_adjetivos(letra, lang_code=lang_code)
+        elif tipo_analisis == "riqueza_lexica":
+            resultado = riqueza_lexica(letra, usar_lemmas=True, excluir_stopwords=True, solo_palabras_contenido=True, lang_code=lang_code)
+        elif tipo_analisis == "frecuencia_pronombres":
+            resultado = frecuencia_pronombres(letra, incluir_posesivos=True, lang_code=lang_code)
+        elif tipo_analisis == "deteccion_rimas":
+            resultado = deteccion_rimas(letra, lang_code=lang_code, tail_len=3)
+        elif tipo_analisis == "repeticion_versos":
+            resultado = repeticion_versos(letra, sim_umbral=0.85, max_versos=250)
+        elif tipo_analisis == "palabras_mas_frecuentes":
+            resultado = palabras_mas_frecuentes(letra, top_n=10, usar_lemmas=True, excluir_stopwords=True, min_len=2, lang_code=lang_code)
+        elif tipo_analisis == "deteccion_temas":
+            resultado = deteccion_temas(letra, top_k=3, multi_label=True, lang_code=lang_code)
+        elif tipo_analisis == "deteccion_metaforas":
+            resultado = deteccion_metaforas(letra, lang_code=lang_code)
+        elif tipo_analisis == "reconocimiento_entidades":
+            resultado = reconocimiento_entidades(letra, lang_code=lang_code, top_n=8)
+        elif tipo_analisis == "sentimiento":
+            resultado = analizar_sentimiento_pro(letra)  # ← PRO
+        else:
+            return jsonify({"error": "Tipo de análisis no soportado."})
+    except Exception as e:
+        # Evita 500 y devuelve JSON que el front entiende
+        # Opcional: log detallado
+        import traceback; print("ERROR en análisis:", tipo_analisis, e); print(traceback.format_exc())
+        return jsonify({"error": f"Error interno en el análisis '{tipo_analisis}': {str(e)}"})
 
     return jsonify({
         "letra": letra,
@@ -82,6 +78,7 @@ def analizar():
         "idioma": lang_code,
         "confianza_idioma": lang_conf
     })
+
 
 
 

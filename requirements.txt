@@ -13,7 +13,7 @@ transformers
 torch       # CPU está bien; si usas GPU, se activará sola
 sentencepiece
 langdetect  # si no la tienes ya (para mostrar el idioma detectado)
-
+huggingface_hub
 
 # SpaCy (versión compatible con Python 3.13)
 spacy==3.8.7 --only-binary :all:
