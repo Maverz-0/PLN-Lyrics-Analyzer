@@ -6,10 +6,10 @@ Incluye:
 - Detección de idioma (langdetect)
 - Gestión de modelos spaCy por idioma (con cache y fallbacks)
 - Análisis: porcentaje de adjetivos, riqueza léxica (TTR),
-  frecuencia de pronombres, detección de rimas, repetición de versos,
-  palabras más frecuentes, detección de temas (zero-shot + fallback),
-  detección de metáforas (heurístico), NER multi-idioma con spaCy,
-  sentimiento PRO con XLM-RoBERTa (Transformers) robusto.
+  frecuencia de pronombres, detección de rimas (ignorando paréntesis/ad-libs),
+  repetición de versos, palabras más frecuentes,
+  detección de temas (zero-shot + fallback), detección de metáforas (heurístico),
+  NER multi-idioma con spaCy, sentimiento PRO con XLM-RoBERTa (Transformers) robusto.
 """
 
 from __future__ import annotations
@@ -56,19 +56,28 @@ SPACY_MODELS = {
 # Fallback de pronombres por idioma
 PRON_FALLBACK = {
     "es": {
-        "1": {"yo", "me", "mí", "conmigo", "nosotros", "nosotras", "nos", "mío", "mía", "míos", "mías", "nuestro", "nuestra", "nuestros", "nuestras"},
-        "2": {"tú", "te", "ti", "contigo", "vosotros", "vosotras", "os", "usted", "ustedes", "tuyo", "tuya", "tuyos", "tuyas", "vuestro", "vuestra", "vuestros", "vuestras", "su", "sus"},
-        "3": {"él", "ella", "ello", "se", "sí", "consigo", "ellos", "ellas", "les", "lo", "la", "los", "las", "le", "su", "sus"}
+        "1": {"yo", "me", "mí", "conmigo", "nosotros", "nosotras", "nos",
+              "mío", "mía", "míos", "mías", "nuestro", "nuestra",
+              "nuestros", "nuestras"},
+        "2": {"tú", "te", "ti", "contigo", "vosotros", "vosotras", "os",
+              "usted", "ustedes", "tuyo", "tuya", "tuyos", "tuyas",
+              "vuestro", "vuestra", "vuestros", "vuestras", "su", "sus"},
+        "3": {"él", "ella", "ello", "se", "sí", "consigo", "ellos", "ellas",
+              "les", "lo", "la", "los", "las", "le", "su", "sus"}
     },
     "en": {
         "1": {"i", "me", "my", "mine", "we", "us", "our", "ours"},
         "2": {"you", "your", "yours"},
-        "3": {"he", "him", "his", "she", "her", "hers", "it", "its", "they", "them", "their", "theirs"}
+        "3": {"he", "him", "his", "she", "her", "hers", "it", "its",
+              "they", "them", "their", "theirs"}
     },
     "fr": {
-        "1": {"je", "me", "moi", "nous", "notre", "nos", "mien", "mienne", "miens", "miennes"},
-        "2": {"tu", "te", "toi", "vous", "votre", "vos", "tien", "tienne", "tiens", "tiennes"},
-        "3": {"il", "elle", "on", "se", "lui", "eux", "elles", "leur", "leurs", "son", "sa", "ses"}
+        "1": {"je", "me", "moi", "nous", "notre", "nos",
+              "mien", "mienne", "miens", "miennes"},
+        "2": {"tu", "te", "toi", "vous", "votre", "vos",
+              "tien", "tienne", "tiens", "tiennes"},
+        "3": {"il", "elle", "on", "se", "lui", "eux", "elles",
+              "leur", "leurs", "son", "sa", "ses"}
     },
 }
 
@@ -125,7 +134,8 @@ def get_nlp(lang_code: str):
         return None
 
 def _strip_accents(s: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
+    return "".join(c for c in unicodedata.normalize("NFD", s)
+                   if unicodedata.category(c) != "Mn")
 
 def _normalize_line(line: str) -> str:
     """Limpia líneas: elimina [Sección], normaliza espacios y deja letras/apóstrofos."""
@@ -203,18 +213,15 @@ def _dist_to_scores(dist: List[Dict[str, Any]], pipe=None) -> Tuple[float, float
     Normaliza la distribución del pipeline a (score[-1,1], p_pos, p_neu, p_neg),
     soportando etiquetas 'positive/neutral/negative' o 'LABEL_0/1/2'.
     """
-    # 1) diccionario etiqueta->score en minúsculas
     raw = {str(x["label"]).lower(): float(x["score"]) for x in dist}
 
-    # 2) caso ideal: ya vienen como 'positive/neutral/negative'
+    # Caso ideal
     p_pos = raw.get("positive")
     p_neu = raw.get("neutral")
     p_neg = raw.get("negative")
 
     if p_pos is None or p_neu is None or p_neg is None:
         mapped = {}
-
-        # 3) intentar mapear usando id2label del modelo
         id2label = getattr(getattr(getattr(pipe, "model", None), "config", None), "id2label", None)
         if isinstance(id2label, dict):
             for k, v in id2label.items():
@@ -226,22 +233,18 @@ def _dist_to_scores(dist: List[Dict[str, Any]], pipe=None) -> Tuple[float, float
                     mapped["neutral"] = raw.get(lab_key, 0.0)
                 elif "neg" in vlow:
                     mapped["negative"] = raw.get(lab_key, 0.0)
-
-        # 4) fallback por convención LABEL_0/1/2 -> neg/neu/pos
         if not mapped:
             mapped = {
                 "negative": raw.get("label_0", 0.0),
                 "neutral":  raw.get("label_1", 0.0),
                 "positive": raw.get("label_2", 0.0),
             }
-
         p_pos = mapped.get("positive", 0.0)
         p_neu = mapped.get("neutral", 0.0)
         p_neg = mapped.get("negative", 0.0)
 
     s = p_pos - p_neg  # [-1,1]
     return s, p_pos, p_neu, p_neg
-
 
 def analizar_sentimiento_pro(texto: str) -> Dict[str, Any]:
     """
@@ -501,37 +504,75 @@ def _rhyme_key_assonant(word_norm: str, vowels: set[str]) -> str:
     tail = word_norm[-5:]
     return "".join(ch for ch in tail if ch in vowels)
 
+# --- NUEVO: quitar paréntesis/ad-libs solo para rimas ---
+_PAREN_BLOCK_RE = re.compile(r"\([^)]*\)")         # ( ... )
+_PAREN_TAIL_OPEN_RE = re.compile(r"\([^\)]*$")     # '(' sin cerrar al final
+
+def _strip_parentheticals(line: str) -> str:
+    """
+    Elimina todo el contenido entre paréntesis de un verso.
+    - Borra (ad-libs), (x2), etc.
+    - Si hay '(' sin cerrar al final, también se elimina.
+    """
+    s = line
+    # elimina cualquier bloque ( ... )
+    while True:
+        new = _PAREN_BLOCK_RE.sub(" ", s)
+        if new == s:
+            break
+        s = new
+    # elimina '(' colgante al final
+    s = _PAREN_TAIL_OPEN_RE.sub("", s)
+    # normaliza espacios
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
 def deteccion_rimas(texto: str, lang_code: str | None = None, tail_len: int = 3) -> Dict[str, Any]:
     """
     Rimas por fin de verso: clave consonante y asonante; esquema A/B/C priorizando consonante.
+    - **Ignora paréntesis/ad-libs** al final o dentro de los versos (p.ej. "(yeah)", "(x2)").
     """
     if not lang_code:
         lang_code = detectar_idioma(texto)["codigo"]
-    _ = get_nlp(lang_code) or get_nlp("es") or spacy.load("es_core_news_sm")  # para asegurar recursos
+    _ = get_nlp(lang_code) or get_nlp("es") or spacy.load("es_core_news_sm")  # asegurar recursos (stopwords, etc.)
     vowels = _lang_vowels(lang_code)
 
     raw_lines = [ln for ln in texto.splitlines()]
-    lines = [_normalize_line(ln) for ln in raw_lines]
+
+    # 1) Quitar paréntesis/ad-libs antes de normalizar
+    pre = [_strip_parentheticals(ln) for ln in raw_lines]
+
+    # 2) Normalización (quita etiquetas y puntuación, deja letras/apóstrofos)
+    lines = [_normalize_line(ln) for ln in pre]
+
+    # 3) Filtrar vacías y construir índice hacia líneas originales
     idx_map = [i for i, ln in enumerate(lines) if ln]
     lines = [ln for ln in lines if ln]
 
     if not lines:
-        return {"tipo": "deteccion_rimas", "idioma": lang_code, "num_versos": 0, "esquema": [], "grupos": [], "stats": {}}
+        return {
+            "tipo": "deteccion_rimas", "idioma": lang_code,
+            "num_versos": 0, "esquema": [], "grupos": [], "stats": {}
+        }
 
+    # Última palabra normalizada
     last_words = []
     for ln in lines:
         lw = _last_word(ln)
         lw = _strip_accents(lw).lower()
         last_words.append(lw)
 
+    # Claves de rima
     keys_cons = [_rhyme_key_consonant(w, tail_len=tail_len) for w in last_words]
     keys_asso = [_rhyme_key_assonant(w, vowels=vowels) for w in last_words]
 
+    # Agrupar
     group_map: Dict[int, str] = {}
     clusters: List[Dict[str, Any]] = []
     label_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     next_label_idx = 0
 
+    # Grupos consonantes (>=2)
     cons_groups = defaultdict(list)
     for i, k in enumerate(keys_cons):
         cons_groups[k].append(i)
@@ -545,6 +586,7 @@ def deteccion_rimas(texto: str, lang_code: str | None = None, tail_len: int = 3)
                 used.add(m)
             clusters.append({"tipo": "consonante", "clave": k, "miembros": members})
 
+    # Grupos asonantes para no agrupados (>=2)
     asso_groups = defaultdict(list)
     for i, k in enumerate(keys_asso):
         if i in used:
@@ -559,7 +601,10 @@ def deteccion_rimas(texto: str, lang_code: str | None = None, tail_len: int = 3)
                 used.add(m)
             clusters.append({"tipo": "asonante", "clave": k, "miembros": members})
 
+    # Etiquetado de esquema
     esquema = [group_map.get(i, "-") for i in range(len(lines))]
+
+    # Métricas
     versos_con_rima = sum(1 for e in esquema if e != "-")
     stats = {
         "versos": len(lines),
@@ -570,6 +615,7 @@ def deteccion_rimas(texto: str, lang_code: str | None = None, tail_len: int = 3)
         "rimas_asonantes": sum(1 for c in clusters if c["tipo"] == "asonante"),
     }
 
+    # Ejemplos y mapeo a índices originales
     for cl in clusters:
         cl["indices"] = [idx_map[i] for i in cl["miembros"]]
         cl["ejemplos"] = [raw_lines[idx_map[i]] for i in cl["miembros"][:3]]
@@ -704,7 +750,8 @@ def palabras_mas_frecuentes(
         "tipo": "palabras_mas_frecuentes",
         "idioma": lang_code,
         "top": [{"palabra": w, "conteo": c} for w, c in top],
-        "config": {"top_n": top_n, "usar_lemmas": usar_lemmas, "excluir_stopwords": excluir_stopwords, "min_len": min_len},
+        "config": {"top_n": top_n, "usar_lemmas": usar_lemmas,
+                   "excluir_stopwords": excluir_stopwords, "min_len": min_len},
         "total_tokens_considerados": len(items),
         "metodo": "spacy"
     }
@@ -719,7 +766,8 @@ def _get_zeroshot_pipeline():
     if pipeline is None:
         return None
     try:
-        return pipeline("zero-shot-classification", model="joeddav/xlm-roberta-large-xnli", device=-1)
+        return pipeline("zero-shot-classification",
+                        model="joeddav/xlm-roberta-large-xnli", device=-1)
     except Exception:  # pragma: no cover
         return None
 
@@ -741,11 +789,14 @@ def deteccion_temas(
     clf = _get_zeroshot_pipeline()
     if clf is not None:
         hyp = "Este texto es sobre {}."
-        res = clf(texto, candidate_labels=etiquetas, multi_label=multi_label, hypothesis_template=hyp)
+        res = clf(texto, candidate_labels=etiquetas,
+                  multi_label=multi_label, hypothesis_template=hyp)
         pares = list(zip(res["labels"], res["scores"]))
         pares = sorted(pares, key=lambda x: x[1], reverse=True)[:top_k]
-        top = [{"tema": lab, "score": round(float(score) * 100, 1)} for lab, score in pares]
-        return {"tipo": "deteccion_temas", "metodo": "zero_shot", "top": top, "etiquetas_consideradas": etiquetas}
+        top = [{"tema": lab, "score": round(float(score) * 100, 1)}
+               for lab, score in pares]
+        return {"tipo": "deteccion_temas", "metodo": "zero_shot",
+                "top": top, "etiquetas_consideradas": etiquetas}
 
     # Fallback por palabras clave
     keyword_map = {
@@ -771,7 +822,8 @@ def deteccion_temas(
         scores.append((tema, s))
     scores.sort(key=lambda x: x[1], reverse=True)
     top = [{"tema": t, "score": float(c)} for t, c in scores[:top_k]]
-    return {"tipo": "deteccion_temas", "metodo": "keywords", "top": top, "etiquetas_consideradas": etiquetas}
+    return {"tipo": "deteccion_temas", "metodo": "keywords",
+            "top": top, "etiquetas_consideradas": etiquetas}
 
 # =========================
 # Metáforas (heurístico)
@@ -808,7 +860,8 @@ def deteccion_metaforas(texto: str, lang_code: str | None = None) -> Dict[str, A
                 similes.append({"linea": lines_raw[i], "indice": i})
                 break
 
-    cabezas_meta = {"corazón", "alma", "vida", "sueño", "fuego", "hielo", "cielo", "infierno", "mar", "tormenta", "luz", "sombra"}
+    cabezas_meta = {"corazón", "alma", "vida", "sueño", "fuego", "hielo",
+                    "cielo", "infierno", "mar", "tormenta", "luz", "sombra"}
     genit = []
     pat_de = re.compile(r"\b([a-záéíóúüñ]+)\s+de\s+([a-záéíóúüñ]+)\b", re.IGNORECASE)
     for i, ln in enumerate(lines):
@@ -823,7 +876,8 @@ def deteccion_metaforas(texto: str, lang_code: str | None = None) -> Dict[str, A
         "idioma": lang_code,
         "similes": similes[:10],
         "metaforas_nominales": genit[:10],
-        "conteos": {"similes": len(similes), "metaforas_nominales": len(genit), "total": len(similes) + len(genit)},
+        "conteos": {"similes": len(similes), "metaforas_nominales": len(genit),
+                    "total": len(similes) + len(genit)},
         "nota": "Heurístico; se centra en símiles ('como/like/comme') y patrones 'X de Y' comunes."
     }
 
@@ -856,4 +910,7 @@ def reconocimiento_entidades(texto: str, lang_code: str | None = None, top_n: in
             "top": [{"texto": t, "conteo": c} for t, c in top]
         }
 
-    return {"tipo": "reconocimiento_entidades", "idioma": lang_code, "total_entidades": total_entidades, "por_tipo": salida}
+    return {"tipo": "reconocimiento_entidades",
+            "idioma": lang_code,
+            "total_entidades": total_entidades,
+            "por_tipo": salida}
