@@ -1,0 +1,39 @@
+# --- Python caches ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.cache/
+
+# --- Entornos / configuraciones ---
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+.conda/
+*.env
+.env.*
+
+# --- Build / dist ---
+build/
+dist/
+.eggs/
+*.egg-info/
+*.egg
+
+# --- IDE / SO ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Hugging Face / Transformers caches ---
+.hf_cache/
+**/.hf_cache/
+**/hub/
+# Si cambias HF_HOME a otra ruta dentro del repo, ignórala también.
+
+# --- Otros que no quieras versionar ---
+.ipynb_checkpoints/
