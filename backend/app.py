@@ -85,6 +85,7 @@ def analizar():
 
 
 
+
 @app.route('/sugerencias', methods=['GET'])
 def sugerencias():
     query = request.args.get('q', '')
