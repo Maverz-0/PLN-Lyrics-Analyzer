@@ -355,6 +355,7 @@
           <div class="info-body scrollable">
             <div class="info-list">
               <div class="info-card"><h3>Porcentaje de adjetivos</h3><p>Mide la proporción de adjetivos respecto al total de palabras. Útil para ver cuán descriptiva es la letra.</p></div>
+              <div class="info-card"><h3>Sentimiento (simple)</h3><p>Estima el tono emocional global en una escala de &minus;1 (negativo) a 1 (positivo) usando léxicos multilingües con reglas de negación e intensificadores; también muestra la distribución positivo/neutral/negativo.</p></div>
               <div class="info-card"><h3>Riqueza léxica (TTR)</h3><p>Relación entre tipos únicos y tokens totales (con lematización y sin stopwords). Más alto ⇒ vocabulario más variado.</p></div>
               <div class="info-card"><h3>Frecuencia de pronombres</h3><p>Distribución de pronombres en 1ª, 2ª y 3ª persona (opcionalmente posesivos). Indica el foco narrativo.</p></div>
               <div class="info-card"><h3>Detección de rimas</h3><p>Analiza las últimas palabras de cada verso para detectar rima consonante/asonante y mostrar el esquema de rima.</p></div>
@@ -680,15 +681,23 @@
         addCard(`
           <h3>Puntuación</h3>
           <div class="stat-value">${r.score}</div>
-          <div class="subtext">Resumen: ${r.resumen} · Modelo: ${r.modelo || "—"}</div>
+          <div class="subtext">
+            Resumen: ${r.resumen}<br>
+            Modelo: ${r.modelo || "—"}
+          </div>
           ${meter}
         `);
 
         const d = r.distribucion || {};
         addCard(`
           <h3>Distribución global</h3>
-          <div class="subtext">Positivo: ${d.positivo ?? 0}% · Neutral: ${d.neutral ?? 0}% · Negativo: ${d.negativo ?? 0}%</div>
+          <div class="subtext">
+            Positivo: ${d.positivo ?? 0}%<br>
+            Neutral: ${d.neutral ?? 0}%<br>
+            Negativo: ${d.negativo ?? 0}%
+          </div>
         `);
+
 
         const tops = r.segmentos_top || {};
         const pos = (tops.positivos || []).map(x => `+ ${x.texto} (${x.score})`);

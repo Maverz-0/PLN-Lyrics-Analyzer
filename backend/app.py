@@ -8,7 +8,7 @@ from analyzer import (
     porcentaje_adjetivos, riqueza_lexica, frecuencia_pronombres,
     deteccion_rimas, repeticion_versos, palabras_mas_frecuentes,
     deteccion_temas, deteccion_metaforas, reconocimiento_entidades,
-    detectar_idioma, analizar_sentimiento_pro   # <-- nuevo
+    detectar_idioma, analizar_sentimiento_pro, analizar_sentimiento_simple   # <-- nuevo
 )
 
 
@@ -62,7 +62,9 @@ def analizar():
         elif tipo_analisis == "reconocimiento_entidades":
             resultado = reconocimiento_entidades(letra, lang_code=lang_code, top_n=8)
         elif tipo_analisis == "sentimiento":
-            resultado = analizar_sentimiento_pro(letra)  # ← PRO
+            resultado = analizar_sentimiento_simple(letra, lang_code=lang_code)
+        elif tipo_analisis == "sentimiento_pro":
+            resultado = analizar_sentimiento_pro(letra)
         else:
             return jsonify({"error": "Tipo de análisis no soportado."})
     except Exception as e:

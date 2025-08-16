@@ -1,22 +1,49 @@
-Flask==3.1.1
-flask-cors==6.0.1
-requests==2.32.3
-gunicorn==21.2.0
-pymongo==4.11.2
-python-dotenv==1.0.1
-nltk==3.9.1
-beautifulsoup4==4.12.3
-regex==2024.9.11
-spotipy==2.25.1
+# ===== Web / API =====
+Flask
+flask-cors
+gunicorn
 
-transformers
-torch       # CPU está bien; si usas GPU, se activará sola
-sentencepiece
-langdetect  # si no la tienes ya (para mostrar el idioma detectado)
-huggingface_hub
+# ===== Utilidades =====
+python-dotenv
+pymongo
 
-# SpaCy (versión compatible con Python 3.13)
-spacy==3.8.7 --only-binary :all:
+# ===== HTTP / Scraping =====
+requests
+beautifulsoup4
+lxml
+regex
 
-# Modelo en español para spaCy 3.8.x
+# ===== NLP auxiliar =====
+langdetect
+nltk
+spotipy
+pronouncing>=0.2.0
+
+
+# ===== spaCy núcleo (fijado para que case con los modelos) =====
+spacy==3.8.7
+
+# ===== Transformers (sentimiento PRO / zero-shot) =====
+transformers>=4.41,<4.49
+sentencepiece>=0.1.99,<0.2
+huggingface_hub>=0.23,<0.26
+torch    # si diera problemas, instala primero la rueda CPU (ver nota abajo)
+
+# ===== Evitar conflicto SciPy/NumPy que suele aparecer =====
+numpy>=1.26,<2.3.0
+scipy>=1.14.1,<1.15
+
+# ======== Modelos de spaCy (SM) v3.8.0 - deben casar con 3.8.x ========
+
+# Inglés
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+# Español
 https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl
+# Francés
+https://github.com/explosion/spacy-models/releases/download/fr_core_news_sm-3.8.0/fr_core_news_sm-3.8.0-py3-none-any.whl
+# Portugués
+https://github.com/explosion/spacy-models/releases/download/pt_core_news_sm-3.8.0/pt_core_news_sm-3.8.0-py3-none-any.whl
+# Italiano
+https://github.com/explosion/spacy-models/releases/download/it_core_news_sm-3.8.0/it_core_news_sm-3.8.0-py3-none-any.whl
+# Alemán
+https://github.com/explosion/spacy-models/releases/download/de_core_news_sm-3.8.0/de_core_news_sm-3.8.0-py3-none-any.whl
