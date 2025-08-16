@@ -9,7 +9,7 @@ Incluye:
   frecuencia de pronombres, detección de rimas (ignorando paréntesis/ad-libs),
   repetición de versos, palabras más frecuentes,
   detección de temas (zero-shot + fallback), detección de metáforas (heurístico),
-  NER multi-idioma con spaCy, sentimiento PRO con XLM-RoBERTa (Transformers) robusto.
+  NER multi-idioma con spaCy
 """
 
 from __future__ import annotations
@@ -186,6 +186,8 @@ def _weighted_avg(values: List[Tuple[float, int]]) -> float:
     num = sum(v * w for v, w in values)
     den = sum(w for _, w in values) or 1
     return num / den
+
+
 
 # =========================
 # Sentimiento PRO (Transformers) — robusto (low-level con fallback)
