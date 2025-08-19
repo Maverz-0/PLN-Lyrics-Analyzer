@@ -8,7 +8,7 @@ from analyzer import (
     porcentaje_adjetivos, riqueza_lexica, frecuencia_pronombres,
     deteccion_rimas, repeticion_versos, palabras_mas_frecuentes,
     deteccion_temas, deteccion_metaforas, reconocimiento_entidades,
-    detectar_idioma, analizar_sentimiento_pro, analizar_sentimiento_simple   # <-- nuevo
+    detectar_idioma, analizar_sentimiento_pro, analizar_sentimiento_simple
 )
 
 
