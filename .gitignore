@@ -37,3 +37,5 @@ Thumbs.db
 
 # --- Otros que no quieras versionar ---
 .ipynb_checkpoints/
+
+# Añade aquí cualquier otro archivo o carpeta que no quieras subir a GitHub.
