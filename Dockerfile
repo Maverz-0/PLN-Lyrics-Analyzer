@@ -23,4 +23,4 @@ WORKDIR /app/backend
 EXPOSE 5001
 
 # Run the Flask app
-CMD ["python", "app.py"]
+CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:5001", "app:app"]
