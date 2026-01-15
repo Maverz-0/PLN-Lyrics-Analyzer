@@ -25,7 +25,7 @@ spacy==3.8.7
 
 # ===== Transformers (sentimiento PRO / zero-shot) =====
 transformers>=4.41,<4.49
-sentencepiece>=0.1.99,<0.2
+#sentencepiece>=0.1.99,<0.2
 huggingface_hub>=0.23,<0.26
 torch    # si diera problemas, instala primero la rueda CPU (ver nota abajo)
 
