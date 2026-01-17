@@ -1,13 +1,24 @@
 # -*- coding: utf-8 -*-
+import os
 import requests
 from bs4 import BeautifulSoup
 import re
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde el archivo .env (si existe)
+load_dotenv()
 
 # === API Genius (búsqueda) ===
-ACCESS_TOKEN = "LsnmCehh5fc2ub62tE2fxg2i-HNsBgzODgRxkptk4xY4OeJ4ycDJnBPy9bihYRfF"
+# Leemos el token de la variable de entorno
+ACCESS_TOKEN = os.getenv("GENIUS_ACCESS_TOKEN")
+
+# Comprobación de seguridad para evitar errores confusos si falta el token
+if not ACCESS_TOKEN:
+    raise ValueError("Error: No se encontró la variable de entorno 'GENIUS_ACCESS_TOKEN'. Asegúrate de tener el archivo .env en local o la variable configurada en Coolify.")
+
 HEADERS = {"Authorization": f"Bearer {ACCESS_TOKEN}"}
 
-# Cabeceras tipo navegador para la página HTML (¡no uses el token aquí!)
+# Cabeceras tipo navegador para la página HTML
 BROWSER_HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
                   "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
