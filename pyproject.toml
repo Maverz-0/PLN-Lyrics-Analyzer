@@ -1,0 +1,41 @@
+[project]
+name = "pln-lyrics-analyzer"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "de-core-news-sm",
+    "en-core-web-sm",
+    "es-core-news-sm",
+    "flask>=3.1.2",
+    "flask-cors>=6.0.2",
+    "fr-core-news-sm",
+    "gunicorn>=23.0.0",
+    "huggingface-hub>=0.23,<0.26",
+    "it-core-news-sm",
+    "langdetect>=1.0.9",
+    "lxml>=6.0.2",
+    "nltk>=3.9.2",
+    "numpy>=1.26,<2.3.0",
+    "pronouncing>=0.2.0",
+    "pt-core-news-sm",
+    "pymongo>=4.16.0",
+    "python-dotenv>=1.2.1",
+    "regex>=2026.1.15",
+    "requests>=2.32.5",
+    "scipy>=1.14.1,<1.15",
+    "spacy==3.8.7",
+    "spotipy>=2.25.2",
+    "torch>=2.9.1",
+    "transformers>=4.41,<4.49",
+]
+
+[tool.uv.sources]
+en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
+es-core-news-sm = { url = "https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl" }
+fr-core-news-sm = { url = "https://github.com/explosion/spacy-models/releases/download/fr_core_news_sm-3.8.0/fr_core_news_sm-3.8.0-py3-none-any.whl" }
+pt-core-news-sm = { url = "https://github.com/explosion/spacy-models/releases/download/pt_core_news_sm-3.8.0/pt_core_news_sm-3.8.0-py3-none-any.whl" }
+it-core-news-sm = { url = "https://github.com/explosion/spacy-models/releases/download/it_core_news_sm-3.8.0/it_core_news_sm-3.8.0-py3-none-any.whl" }
+de-core-news-sm = { url = "https://github.com/explosion/spacy-models/releases/download/de_core_news_sm-3.8.0/de_core_news_sm-3.8.0-py3-none-any.whl" }
